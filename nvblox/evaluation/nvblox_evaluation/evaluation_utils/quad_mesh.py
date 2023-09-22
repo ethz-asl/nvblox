@@ -17,6 +17,8 @@
 from pathlib import Path
 import open3d as o3d
 import trimesh
+from copy import deepcopy
+
 
 def load_quad_mesh(mesh_filepath: Path) -> o3d.geometry.TriangleMesh:
     """Loads a mesh with quads
@@ -30,6 +32,6 @@ def load_quad_mesh(mesh_filepath: Path) -> o3d.geometry.TriangleMesh:
     # NOTE(alexmillane): We have to go through trimesh because Open3D can't open quad meshes
     gt_mesh_trimesh = trimesh.load_mesh(str(mesh_filepath))
     gt_mesh = gt_mesh_trimesh.as_open3d
-    gt_mesh.vertex_normals = o3d.utility.Vector3dVector(
-        gt_mesh_trimesh.vertex_normals)
+    gt_mesh.vertex_normals = o3d.utility.Vector3dVector()
+    gt_mesh.vertex_normals.extend(gt_mesh_trimesh.vertex_normals)
     return gt_mesh

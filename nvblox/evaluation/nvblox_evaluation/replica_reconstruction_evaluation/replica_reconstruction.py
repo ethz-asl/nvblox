@@ -56,7 +56,7 @@ def replica_reconstruction(dataset_path: Path,
         Exception: If the binary is not found.
 
     Returns:
-        Tuple[Path, Path]: Path to the reconstructed mesh + Path to the reconstructed ESDF. 
+        Tuple[Path, Path]: Path to the reconstructed mesh + Path to the reconstructed ESDF.
     """
     dataset_name = replica.get_dataset_name_from_dataset_root_path(
         dataset_path)
@@ -86,7 +86,8 @@ def replica_reconstruction(dataset_path: Path,
                    esdf_output_path_flag, f"{reconstructed_esdf_path}",
                    timing_output_path_flag, f"{timing_path}",
                    esdf_frame_subsampling_flag, f"{esdf_frame_subsampling}",
-                   mesh_frame_subsampling_flag, f"{mesh_frame_subsampling}"])
+                   mesh_frame_subsampling_flag, f"{mesh_frame_subsampling}",
+                   "--voxel_size=0.02"])
 
     # Extract the means of the timers
     timings_df = get_timings_as_dataframe(timing_path)

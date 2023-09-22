@@ -15,6 +15,7 @@ def visualize_ply(ply_path: str, do_normal_coloring: bool):
     vis.create_window()
     vis.add_geometry(mesh)
     # Color the mesh by normals.
+    vis.get_render_option().light_on = False
     if do_normal_coloring:
         vis.get_render_option().mesh_color_option = \
             o3d.visualization.MeshColorOption.Normal
