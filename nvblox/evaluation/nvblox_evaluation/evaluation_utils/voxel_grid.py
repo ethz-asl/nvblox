@@ -279,11 +279,13 @@ class VoxelGrid:
                 vis.add_geometry(slice_mesh, reset_bounding_box=False)
             if viewpoint is not None:
                 ctr.convert_from_pinhole_camera_parameters(viewpoint)
+            vis.get_render_option().light_on = False
             vis.poll_events()
             vis.update_renderer()
             image_float = np.asarray(vis.capture_screen_float_buffer(True))
-            print(image_float.shape)
             image_uint8 = (image_float * 255).astype(np.uint8)
-            images.append(image_uint8)
+            if z_idx > 0:
+                images.append(image_uint8)
+                print(image_uint8.shape)
         vis.destroy_window()
         return ImageSequenceClip(images, fps=10)

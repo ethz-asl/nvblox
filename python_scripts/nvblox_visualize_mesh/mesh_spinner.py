@@ -5,6 +5,7 @@ import open3d as o3d
 import json
 import numpy as np
 from typing import Optional
+from moviepy.editor import ImageSequenceClip
 
 # Methods to generate a spherical camera trajectory.
 
@@ -125,9 +126,11 @@ class MeshSpinner:
         if self.index < len(self.trajectory.parameters):
             ctr.convert_from_pinhole_camera_parameters(
                 self.trajectory.parameters[self.index], allow_arbitrary=True)
+            if self.output and self.index > 0:
+                image_float = np.asarray(vis.capture_screen_float_buffer(True))
+                image_uint8 = (image_float * 255).astype(np.uint8)
+                self.images.append(image_uint8)
         self.index = self.index + 1
-
-        # ctr.rotate(10.0, 0.0)
         return False
 
     def set_view_control_from_json(self, file_path):
@@ -145,7 +148,7 @@ class MeshSpinner:
 
     def generate_trajectory(self):
         self.trajectory = o3d.camera.PinholeCameraTrajectory()
-        traj = pose_spiral(num_views=250, radius=10.,
+        traj = pose_spiral(num_views=180, radius=10.,
                            elevation=45, elevation2=25,
                            offset=np.array([3.0, 1.3, 0]),
                            vec_up_nerf_format=np.array([0., 0., -1.]))
@@ -163,7 +166,10 @@ class MeshSpinner:
         self.trajectory.parameters = all_params
         self.index = 0
 
-    def visualize_ply(self, ply_path: str, do_normal_coloring: bool, view: str):
+    def visualize_ply(
+            self, ply_path: str, do_normal_coloring: bool, view: str,
+            output_path: str):
+        self.output = False
         # Load the mesh.
         mesh = o3d.io.read_triangle_mesh(ply_path)
         print(mesh)
@@ -186,13 +192,38 @@ class MeshSpinner:
         # Generate a trajectory
         self.generate_trajectory()
 
-        # Spin once
+        # Spin once before we start
         self.spin(self.vis)
+
+        # Set up the output if we need to:
+        if output_path:
+            self.index = 0
+            self.output = True
+            self.images = []
+
+        self.spin(self.vis)
+        self.index = 0
 
         self.vis.register_animation_callback(self.spin)
 
         self.vis.run()
+
+        pinhole = self.vis.get_view_control().convert_to_pinhole_camera_parameters()
+        print("Focal length: ")
+        print(pinhole.intrinsic.get_focal_length())
+        print("PP:", pinhole.intrinsic.get_principal_point(),
+              " Width: ", pinhole.intrinsic.width,
+              " Height: ", pinhole.intrinsic.height)
+        print(pinhole.extrinsic)
+
         self.vis.destroy_window()
+
+        # If we're outputting the video, then... do it.
+        if self.output:
+            for image in self.images:
+                print(image.shape)
+            clip = ImageSequenceClip(self.images, fps=10)
+            clip.write_videofile(str(output_path), fps=10, bitrate="8M", codec='mpeg4')
 
 
 parser = argparse.ArgumentParser(description="Visualize a PLY mesh.")
@@ -207,6 +238,10 @@ parser.add_argument(
     const=True, default=False,
     help="Flag indicating if we should just color the mesh by normals.")
 
+parser.add_argument("--output_path", type=str,
+                    help="Path to output the mp4 file.")
+
 args = parser.parse_args()
 mesh_spinner = MeshSpinner()
-mesh_spinner.visualize_ply(args.ply_path, args.do_normal_coloring, args.view)
+mesh_spinner.visualize_ply(
+    args.ply_path, args.do_normal_coloring, args.view, args.output_path)

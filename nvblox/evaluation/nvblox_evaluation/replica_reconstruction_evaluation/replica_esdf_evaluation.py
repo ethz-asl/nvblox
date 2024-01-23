@@ -134,10 +134,18 @@ def evaluate_esdf(reconstructed_esdf_path: Path,
     # Animation
     if do_slice_animation:
         print('Making a slice animation')
+        viewpoint = o3d.camera.PinholeCameraParameters()
+        viewpoint.intrinsic.set_intrinsics(1846, 1016, 879.88, 879.88, 922.5, 507.5)
+        viewpoint.extrinsic = np.array([
+            [-9.97564051e-01,  6.97564683e-02, -6.93889392e-18,  2.90200884e+00],
+            [ 4.93252725e-02,  7.05384316e-01, -7.07106771e-01, -1.06497503e+00],
+            [-4.93252725e-02, -7.05384316e-01, -7.07106771e-01,  1.10649748e+01],
+            [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]
+            ])
         clip = reconstructed_sdf.get_z_slice_animation_clip(
-            mesh=reconstructed_mesh)
+            mesh=reconstructed_mesh, viewpoint=viewpoint)
         animation_path = output_dir / 'reconstructed_esdf_slice_animation.mp4'
-        clip.write_videofile(str(animation_path), fps=10)
+        clip.write_videofile(str(animation_path), fps=10, bitrate="8M", codec='mpeg4')
 
     # Slice
     if do_slice_visualization:
